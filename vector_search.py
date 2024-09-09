@@ -91,6 +91,7 @@ def get_response(query, search_results):
                 Please summarize and structure the search to best answer my question. If there is already a structure in the search - keep it reasonably intact.
                 Please drop irrelevant results from your summary, but make sure to keep all links, file references and tool mentions.
                 If there is a specific answer to my question in the search results - please answer it first, and then summarize the rest.
+                Try to answer the user in the language which he used to ask the question, if possible.
                 '''
     response = client.chat.completions.create(
         messages = [
