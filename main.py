@@ -12,6 +12,10 @@ APP_TOKEN = os.getenv('APP_TOKEN')
 # Initializes your app with your bot token and socket mode handler
 app = App(token=BOT_TOKEN)
 
+@app.event("message_deleted")
+def handle_message_deleted(event):
+    pass
+
 @app.message()
 def handle_message(message, say):
     bot_user_id = app.client.auth_test()["user_id"]  # Get the bot's user ID
