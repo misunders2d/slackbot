@@ -100,6 +100,7 @@ def get_response(query, search_results):
                 Please summarize and structure the search to best answer my question. If there is already a structure in the search - keep it reasonably intact.
                 Please drop irrelevant results from your summary, but make sure to keep all links, file references and tool mentions.
                 If there is a specific answer to my question in the search results - please answer it first, and then summarize the rest.
+                If there is not enough information in search results to answer user's question - let the user know about it and try to answer with your own knowledge.
                 Try to answer the user in the language which he used to ask the question, if possible.
                 Make sure to include the "created" date and also "modified" date if it's different from the date of creation.
                 '''
