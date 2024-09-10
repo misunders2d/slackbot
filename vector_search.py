@@ -40,7 +40,14 @@ def fetch_data_from_db():
     all_texts = []
     for item in stream:
         data = item.to_dict()
-        record = {'key':item.id, 'embedding':data['embedding'],'problem':data['problem'],'solution':data['solution']}
+        record = {
+            'key':item.id,
+            'embedding':data['embedding'],
+            'problem':data['problem'],
+            'solution':data['solution'],
+            'date_created':item.create_time.date(),
+            'date_modified':item.update_time.date()
+            }
         all_texts.append(record)
     return all_texts
 
@@ -79,6 +86,8 @@ def vector_search(query:str, top_n:int=5):
         distances[record['key']] = {
             'problem':record['problem'],
             'solution':record['solution'],
+            'date_created':record['date_created'],
+            'date_modified':record['date_modified'],
             'prob':distance} 
 
     # Sort based on distance and take the top N
@@ -92,6 +101,7 @@ def get_response(query, search_results):
                 Please drop irrelevant results from your summary, but make sure to keep all links, file references and tool mentions.
                 If there is a specific answer to my question in the search results - please answer it first, and then summarize the rest.
                 Try to answer the user in the language which he used to ask the question, if possible.
+                Make sure to include the "created" date and also "modified" date if it's different from the date of creation.
                 '''
     response = client.chat.completions.create(
         messages = [
