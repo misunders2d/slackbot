@@ -21,8 +21,8 @@ from functools import cache
 from numpy import dot, array
 from numpy.linalg import norm
 from typing import Final
-from openai import OpenAI, NotFoundError
-from openai.types.beta.thread import Thread
+from openai import OpenAI, NotFoundError # future development
+from openai.types.beta.thread import Thread # future development
 
 
 OPENAI_KEY: Final = os.getenv('KNOWLEDGE_BASE_AI_KEY')
