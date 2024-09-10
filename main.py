@@ -12,10 +12,6 @@ APP_TOKEN = os.getenv('APP_TOKEN')
 # Initializes your app with your bot token and socket mode handler
 app = App(token=BOT_TOKEN)
 
-@app.event("message")
-def handle_message(event):
-    pass
-
 @app.message()
 def handle_message(message, say):
     bot_user_id = app.client.auth_test()["user_id"]  # Get the bot's user ID
@@ -28,6 +24,11 @@ def handle_message(message, say):
         search_results = '\n\n'.join([f"Problem: {result['problem']}, solution: {result['solution']}" for key, result in vector_results.items() if result['prob'] > 0.35])
         response = vs.get_response(query, search_results)
         say(response.choices[0].message.content, thread_ts=message['ts'])
+
+@app.event("message")
+def handle_message(event):
+    pass
+
 
 # Start your app
 if __name__ == "__main__":
