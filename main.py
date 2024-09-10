@@ -19,7 +19,7 @@ def handle_message(message, say):
 
     # Check if the message contains the bot's name
     if bot_name in message['text']:
-        query = message['text']
+        query = message['text'].replace('bot_name','')
         vector_results = vs.vector_search(query)
         search_results = '\n\n'.join([f"Problem: {result['problem']}, solution: {result['solution']}" for key, result in vector_results.items() if result['prob'] > 0.35])
         response = vs.get_response(query, search_results)
