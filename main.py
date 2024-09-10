@@ -12,8 +12,8 @@ APP_TOKEN = os.getenv('APP_TOKEN')
 # Initializes your app with your bot token and socket mode handler
 app = App(token=BOT_TOKEN)
 
-@app.event("message_deleted")
-def handle_message_deleted(event):
+@app.event("message")
+def handle_message(event):
     pass
 
 @app.message()
