@@ -27,7 +27,7 @@ def handle_message(message, say):
         vector_results = vs.vector_search(query)
         search_results = '\n\n'.join([f"Problem: {result['problem']}, solution: {result['solution']}" for key, result in vector_results.items() if result['prob'] > 0.35])
         response = vs.get_response(query, search_results)
-        say(response.choices[0].message.content)
+        say(response.choices[0].message.content, thread_ts=message['ts'])
 
 # Start your app
 if __name__ == "__main__":
