@@ -1,6 +1,10 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
+from io import BytesIO
+import pandas as pd
+
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
@@ -18,13 +22,43 @@ def list_problems():
     problems = [x['problem'] for x in all_texts]
     return problems
 
+# Function to create excel file from problems list
+def create_excel(data):
+    df = pd.DataFrame([(i+1,problem) for i, problem in enumerate(data)], columns = ['#','Problem'])
+    output = BytesIO()
+    df.to_excel(output, index = False, engine = 'openpyxl')
+    output.seek(0)
+    return output
+
 # Handle the slash command
 @app.command("/problem_list")
-def handle_problem_list(ack, respond):
+def handle_problem_list(ack, command):
     ack()  # Acknowledge the command
-    response = list_problems()  # Call your function
-    response_str = f"We currently have {len(response)} problems listed in the database:\n- " + '\n- '.join(response)
-    respond(response_str)  # Send the response back to Slack
+    problems = list_problems()  # Call your function
+    file_stream = create_excel(problems)  # Create the Excel file in memory
+    try:
+        response = app.client.files_upload(
+            channels=command['channel_id'],  # Respond in the same channel
+            file=file_stream,
+            filename="problems.xlsx",
+            title="Problems List"
+        )
+        # Optionally send a message after uploading the file
+        app.client.chat_postMessage(
+            channel=command['channel_id'],
+            text=f"Here's the list of {len(problems)} problems that are currently available in the database"
+        )
+    except Exception as e:
+        print(f"Error sending file: {e}")
+        app.client.chat_postMessage(
+            channel=command['channel_id'],
+            text="Failed to send the file."
+        )
+
+
+
+    # response_str = f"We currently have {len(response)} problems listed in the database:\n- " + '\n- '.join(response)
+    # respond(response_str)  # Send the response back to Slack
 
 @app.message()
 def handle_message(message, say):
