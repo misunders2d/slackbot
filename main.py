@@ -12,6 +12,20 @@ APP_TOKEN = os.getenv('APP_TOKEN')
 # Initializes your app with your bot token and socket mode handler
 app = App(token=BOT_TOKEN)
 
+# Function to list all available problems in the db
+def list_problems():
+    all_texts = vs.fetch_data_from_db()
+    problems = [x['problem'] for x in all_texts]
+    return problems
+
+# Handle the slash command
+@app.command("/problem_list")
+def handle_problem_list(ack, respond):
+    ack()  # Acknowledge the command
+    response = list_problems()  # Call your function
+    response_str = "- " + '\n'.join(response)
+    respond(response_str)  # Send the response back to Slack
+
 @app.message()
 def handle_message(message, say):
     bot_user_id = app.client.auth_test()["user_id"]  # Get the bot's user ID
