@@ -23,7 +23,7 @@ def list_problems():
 def handle_problem_list(ack, respond):
     ack()  # Acknowledge the command
     response = list_problems()  # Call your function
-    response_str = "Here's all currently avaiable problems to search for:\n- " + '\n-'.join(response)
+    response_str = "Here's all currently avaiable problems to search for:\n- " + '\n- '.join(response)
     respond(response_str)  # Send the response back to Slack
 
 @app.message()
