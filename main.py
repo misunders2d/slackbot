@@ -38,7 +38,7 @@ def handle_problem_list(ack, command):
     file_stream = create_excel(problems)  # Create the Excel file in memory
     try:
         response = app.client.files_upload_v2(
-            channels=command['channel_id'],  # Respond in the same channel
+            channel=command['channel_id'],  # Respond in the same channel
             file=file_stream,
             filename="problems.xlsx",
             title="Problems List"
