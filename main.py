@@ -12,6 +12,7 @@ import vector_search as vs
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 APP_TOKEN = os.getenv('APP_TOKEN')
+REL_THRESHOLD = 0.3
 
 # Initializes your app with your bot token and socket mode handler
 app = App(token=BOT_TOKEN)
@@ -75,7 +76,7 @@ def handle_message(message, say):
                 \nsolution: {result['solution']}
                 \nDate created: {result['date_created']}
                 \nDate modified: {result['date_modified']}"""\
-                for key, result in vector_results.items() if result['prob'] > 0.35
+                for key, result in vector_results.items() if result['prob'] > REL_THRESHOLD
             ]
         )
         response = vs.get_response(query, search_results)
