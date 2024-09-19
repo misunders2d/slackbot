@@ -1,55 +1,25 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()
+import uuid
+from datetime import date
 
-import firebase_admin
-from firebase_admin import firestore,  credentials
-firebase_credentials = {
-    "type": os.getenv("FIREBASE_TYPE"),
-    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
-    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
-    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
-    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
-}
-cred = credentials.Certificate(firebase_credentials)
-from functools import cache
-from numpy import dot, array
-from numpy.linalg import norm
 from typing import Final
 from openai import OpenAI, NotFoundError # future development
 from openai.types.beta.thread import Thread # future development
 
+from pinecone import Pinecone, ServerlessSpec
 
 OPENAI_KEY: Final = os.getenv('KNOWLEDGE_BASE_AI_KEY')
+PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
+NAMESPACE = 'db'
 
 client = OpenAI(api_key = OPENAI_KEY)
 
-@cache
-def fetch_data_from_db():
-    stream = db.collection('knowledge').stream()
-    all_texts = []
-    for item in stream:
-        data = item.to_dict()
-        record = {
-            'key':item.id,
-            'embedding':data['embedding'],
-            'problem':data['problem'],
-            'solution':data['solution'],
-            'date_created':item.create_time.date(),
-            'date_modified':item.update_time.date()
-            }
-        all_texts.append(record)
-    return all_texts
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index = pc.Index('knowledge-db')
+
 
 def get_embedding(text):
     response = client.embeddings.create(
@@ -58,40 +28,52 @@ def get_embedding(text):
     )
     return response.data[0].embedding
 
-def cosine_similarity(query_vector, stored_vector):
-    return dot(query_vector, stored_vector) / (norm(query_vector) * norm(stored_vector))
+def add_record(problem, solution):
+    text = '\n\n'.join((problem,solution))
+    embedding = get_embedding(text)
+    vectors = [
+        {
+            'id':str(uuid.uuid4()),
+            'values':embedding,
+            'metadata':{
+                'problem':problem,
+                'solution':solution,
+                'date_created':str(date.today()),
+                'date_modified':str(date.today())
+                }
+            }
+        ]
+    result = index.upsert(vectors = vectors, namespace = NAMESPACE)    
+    return result
 
-def upload_texts_to_vector(texts:list):
-    for text in texts:
-        problem, solution = text
-        embedding = get_embedding('\n\n'.join(text))
-        db.collection('knowledge').add({"problem": problem, "solution": solution, "embedding": embedding})
-        
+
 def delete_record_from_vector(key: str):
-    db.collection('knowledge').document(key).delete()
+    index.delete(ids=[key], namespace=NAMESPACE)
     
 def modify_record_vector(key: str, text: tuple):
+    current_record = index.fetch(ids = [key], namespace = NAMESPACE)
     problem, solution = text
     embedding = get_embedding('\n\n'.join(text))
-    db.collection('knowledge').document(key).update({"problem": problem, "solution": solution, "embedding": embedding})
+    index.update(
+        id=key,
+        values=embedding,
+        set_metadata={
+            "problem": problem, "solution": solution,
+            'date_created':current_record.vectors[key]['metadata']['date_created'],
+            'date_modified':str(date.today())
+            },
+            namespace=NAMESPACE
+        )
 
-def vector_search(query:str, top_n:int=5):
-    query_embedding = get_embedding(query)
-    all_texts = fetch_data_from_db()    
-
-    distances = {}
-    for record in all_texts:
-        embedding = array(record['embedding'])
-        distance = cosine_similarity(query_embedding, embedding)
-        distances[record['key']] = {
-            'problem':record['problem'],
-            'solution':record['solution'],
-            'date_created':record['date_created'],
-            'date_modified':record['date_modified'],
-            'prob':distance} 
-
-    # Sort based on distance and take the top N
-    results = dict(sorted(distances.items(), key=lambda item: item[1]['prob'], reverse=True)[:top_n])
+def vector_search(query_str: str):
+    query_emb = get_embedding(query_str)
+    results = index.query(
+        namespace=NAMESPACE,
+        vector=query_emb,
+        top_k=5,
+        include_values=False,
+        include_metadata=True
+    )
     return results
 
 def get_response(query, search_results):
@@ -110,6 +92,6 @@ def get_response(query, search_results):
             {'role':'user','content':search_results}
             ],
         model = 'gpt-4o-mini',
-        stream = False
+        stream = True
     )
     return response

@@ -1,7 +1,6 @@
 slack_bolt
 python-dotenv
 openai
-firebase-admin
-numpy
+pinecone
 pandas
 openpyxl

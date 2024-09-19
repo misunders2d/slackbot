@@ -72,11 +72,11 @@ def handle_message(message, say):
         vector_results = vs.vector_search(query)
         search_results = '\n\n'.join(
             [
-                f"""Problem: {result['problem']}
-                \nsolution: {result['solution']}
-                \nDate created: {result['date_created']}
-                \nDate modified: {result['date_modified']}"""\
-                for key, result in vector_results.items() if result['prob'] > REL_THRESHOLD
+                f"""Problem: {x['metadata']['problem']}
+                \nsolution: {x['metadata']['solution']}
+                \nDate created: {x['metadata']['date_created']}
+                \nDate modified: {x['metadata']['date_modified']}"""\
+                for x in vector_results.matches
             ]
         )
         response = vs.get_response(query, search_results)
