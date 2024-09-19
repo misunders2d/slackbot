@@ -92,6 +92,6 @@ def get_response(query, search_results):
             {'role':'user','content':search_results}
             ],
         model = 'gpt-4o-mini',
-        stream = True
+        stream = False
     )
     return response
