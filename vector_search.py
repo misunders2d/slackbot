@@ -20,6 +20,11 @@ client = OpenAI(api_key = OPENAI_KEY)
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index('knowledge-db')
 
+def fetch_data_from_db():
+    all_keys = [x for x in index.list(namespace = NAMESPACE)][0]
+    all_vectors = index.fetch(ids = all_keys, namespace=NAMESPACE)
+    data = [all_vectors.vectors[key]['metadata'] for key in all_vectors.vectors]
+    return data
 
 def get_embedding(text):
     response = client.embeddings.create(
